@@ -27,10 +27,11 @@ type config struct {
 }
 
 type configItem struct {
-	ID                   string            `toml:"id"`
-	SqlTemplate          string            `toml:"sql_template"`
-	Tags                 []string          `toml:"tag_columns"`
-	ExcludeColumns       []string          `toml:"exclude_columns"`
+	ID             string            `toml:"id"`
+	SqlTemplate    string            `toml:"sql_template"`
+	Tags           []string          `toml:"tag_columns"`
+	ExcludeColumns []string          `toml:"exclude_columns"`
+	ColumnTypes    map[string]string `toml:"column_types"`
 }
 
 func NewConfig() *Config {

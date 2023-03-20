@@ -2,11 +2,14 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
+	"reflect"
 	"regexp"
+	"strconv"
 
 	"notifyCollectDB/config"
 
@@ -93,6 +96,7 @@ func main() {
 					for _, v := range excludes {
 						mapExcludes[v] = ""
 					}
+					colTypes := cfg.Cfg.Items[i].ColumnTypes
 
 					// Replace
 					for i, v := range kk {
@@ -114,29 +118,16 @@ func main() {
 								continue
 							}
 
+							strValue := ToString(v)
 							if _, ok := mapTags[k]; ok {
-								strValue := ""
-								if vv, ok := v.(string); ok {
-									strValue = vv
-								} else {
-									switch t := v.(type) {
-									case []uint8:
-										strValue = string(t)
-									case int32:
-										strValue = fmt.Sprint(int(t))
-									case float64:
-										strValue = fmt.Sprint(float64(t))
-									default:
-										log.Printf("default type: %v\n", t)
-										strValue = fmt.Sprintf("%v", t)
-									}
-								}
 								tags[k] = strValue
 							} else if _, ok := mapExcludes[k]; !ok {
-								if vv, ok := v.(string); ok {
-									field[k] = vv
+								if colType, ok := colTypes[k]; ok {
+									field[k] = parseValue(strValue, colType)
 								} else {
 									switch t := v.(type) {
+									case string:
+										field[k] = t
 									case []uint8:
 										field[k] = string(t)
 									case int32:
@@ -144,6 +135,7 @@ func main() {
 									case float64:
 										field[k] = float64(t)
 									default:
+										log.Printf("default type: %s\n", t)
 										log.Printf("default type: %v\n", t)
 										field[k] = fmt.Sprintf("%v", t)
 									}
@@ -188,4 +180,132 @@ func main() {
 	case <-quit:
 	case <-done:
 	}
+}
+
+func ToString(v interface{}) string {
+	strValue := ""
+	switch t := v.(type) {
+	case string:
+		strValue = t
+	case []uint8:
+		strValue = string(t)
+	case int32:
+		strValue = fmt.Sprint(int(t))
+	case float64:
+		strValue = fmt.Sprint(float64(t))
+	default:
+		log.Printf("default type: %s\n", t)
+		log.Printf("default type: %v\n", t)
+		strValue = fmt.Sprintf("%v", t)
+	}
+	return strValue
+}
+
+func parseValue(strValue string, colType string) interface{} {
+	var result interface{}
+	switch colType {
+	case "int":
+		vi, err := strconv.Atoi(strValue)
+		if err == nil {
+			result = vi
+		} else {
+			log.Printf("Failed to parse(%s): (%v)\n", colType, strValue)
+			result = strValue
+		}
+	case "int32":
+		i32, err := strconv.ParseInt(strValue, 10, 32)
+		if err == nil {
+			result = i32
+		} else {
+			log.Printf("Failed to parse(%s): (%v)\n", colType, strValue)
+			result = strValue
+		}
+	case "int64":
+		i64, err := strconv.ParseInt(strValue, 10, 64)
+		if err == nil {
+			result = i64
+		} else {
+			log.Printf("Failed to parse(%s): (%v)\n", colType, strValue)
+			result = strValue
+		}
+	case "uint":
+		ui64, err := strconv.ParseUint(strValue, 10, 64)
+		if err == nil {
+			result = ui64
+		} else {
+			log.Printf("Failed to parse(%s): (%v)\n", colType, strValue)
+			result = strValue
+		}
+	case "uint32":
+		ui, err := strconv.ParseUint(strValue, 10, 32)
+		if err == nil {
+			result = ui
+		} else {
+			log.Printf("Failed to parse(%s): (%v)\n", colType, strValue)
+			result = strValue
+		}
+	case "uint64":
+		ui, err := strconv.ParseUint(strValue, 10, 64)
+		if err == nil {
+			result = ui
+		} else {
+			log.Printf("Failed to parse(%s): (%v)\n", colType, strValue)
+			result = strValue
+		}
+	case "float32":
+		f32, err := strconv.ParseFloat(strValue, 32)
+		if err == nil {
+			result = f32
+		} else {
+			log.Printf("Failed to parse(%s): (%v)\n", colType, strValue)
+			result = strValue
+		}
+	case "float64":
+		f64, err := strconv.ParseFloat(strValue, 64)
+		if err == nil {
+			result = f64
+		} else {
+			log.Printf("Failed to parse(%s): (%v)\n", colType, strValue)
+			result = strValue
+		}
+	default:
+		result = strValue
+	}
+	return result
+}
+
+func JsonString(v interface{}) string {
+	strJSON := ""
+	b, err := json.Marshal(v)
+	if err == nil {
+		strJSON = string(b)
+	}
+	return strJSON
+}
+
+func DeepEqualJSON(j1, j2 string) (bool, error) {
+	var err error
+
+	var d1 interface{}
+	err = json.Unmarshal([]byte(j1), &d1)
+	if err != nil {
+		return false, err
+	}
+
+	var d2 interface{}
+	err = json.Unmarshal([]byte(j2), &d2)
+	if err != nil {
+		return false, err
+	}
+
+	if reflect.DeepEqual(d1, d2) {
+		return true, nil
+	} else {
+		return false, nil
+	}
+}
+
+func IsEqualJSON(a, b string) bool {
+	bEqual, _ := DeepEqualJSON(a, b)
+	return bEqual
 }
