@@ -10,7 +10,8 @@
             "request": "launch",
             "mode": "debug",
             "console": "integratedTerminal",
-            "program": "main.go"
+            "program": "main.go",
+            "args": ["-config","notifyCollectDB.conf"]
         }
     ]
 }
