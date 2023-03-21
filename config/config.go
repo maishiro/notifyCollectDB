@@ -20,6 +20,11 @@ type Config struct {
 }
 
 type config struct {
+	LogFilePath      string `toml:"logfile_path"`
+	LogFileMaxSize   int    `toml:"logfile_maxsize"`
+	LogFileMaxBackup int    `toml:"logfile_maxbackup"`
+	LogFileMaxAge    int    `toml:"logfile_maxage"`
+
 	Driver           string `toml:"driver"`
 	ConnectionString string `toml:"connection_string"`
 

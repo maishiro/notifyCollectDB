@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -26,20 +27,27 @@ import (
 )
 
 func main() {
-	log.SetOutput(&lumberjack.Logger{
-		Filename:   "./log/notifyCollectDB.log",
-		MaxSize:    10,
-		MaxBackups: 10,
-		MaxAge:     28,
-		Compress:   false,
-	})
+	pszPathConfig := flag.String("config", "./setting.conf", "-config (file path)")
+	flag.Parse()
+	strPathConfig := *pszPathConfig
 
+	// load configuration
 	cfg := config.NewConfig()
-	err := cfg.LoadConfig("notifyCollectDB.conf")
+	err := cfg.LoadConfig(strPathConfig)
 	if err != nil {
 		log.Printf("Failed to load config file: %v\n", err)
 		return
 	}
+
+	// LOG configuration
+	log.SetOutput(&lumberjack.Logger{
+		Filename:   cfg.Cfg.LogFilePath,
+		MaxSize:    cfg.Cfg.LogFileMaxSize,
+		MaxBackups: cfg.Cfg.LogFileMaxBackup,
+		MaxAge:     cfg.Cfg.LogFileMaxAge,
+		Compress:   false,
+	})
+
 	if len(cfg.Cfg.Items) == 0 {
 		log.Println("Nothing observe item")
 		return
