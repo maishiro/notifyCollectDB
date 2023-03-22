@@ -76,6 +76,11 @@ func main() {
 
 				var kk []*regexp.Regexp
 				var vv []string
+				for _, v := range metric.TagList() {
+					rep := regexp.MustCompile(fmt.Sprintf("@%s", v.Key))
+					kk = append(kk, rep)
+					vv = append(vv, fmt.Sprintf("%v", v.Value))
+				}
 				for _, v := range metric.FieldList() {
 					rep := regexp.MustCompile(fmt.Sprintf("@%s", v.Key))
 					kk = append(kk, rep)
